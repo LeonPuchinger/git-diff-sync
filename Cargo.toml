@@ -1,0 +1,11 @@
+[package]
+name = "git-diff-sync"
+version = "0.1.0"
+authors = ["Leon Puchinger"]
+edition = "2018"
+description = "syncs uncommitted changes between clones of the same repository"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+git2 = "0.13.15"
