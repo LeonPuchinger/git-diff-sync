@@ -1,14 +1,18 @@
-use git2::{DiffDelta, DiffFormat, DiffHunk, DiffLine, Repository};
+use git2::{DiffDelta, DiffFormat, DiffHunk, DiffLine, DiffOptions, Repository};
 use std::{env, fs::File, io::prelude::*, process};
 
 mod error;
 
 fn generate_diff(path: &str) -> Result<(), error::Error> {
+    let mut opt = DiffOptions::new();
+    opt.show_untracked_content(true);
+    opt.recurse_untracked_dirs(true);
+
     println!("opening repo at {}", path);
     let repo = Repository::init(path)?;
     let head = repo.head()?;
     let tree = head.peel_to_tree()?;
-    let diff = repo.diff_tree_to_workdir(Some(&tree), None)?;
+    let diff = repo.diff_tree_to_workdir(Some(&tree), Some(&mut opt))?;
     let mut file = File::create("diff.txt")?;
 
     let read_diff_line = |_delta: DiffDelta, _hunk: Option<DiffHunk>, line: DiffLine| -> bool {
