@@ -49,12 +49,19 @@ fn apply_diff(path: &str) -> Result<(), error::Error> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    if args.len() != 2 {
-        println!("USAGE: git-diff-sync <path-to-repo>");
+    if args.len() != 3 {
+        println!("USAGE: git-diff-sync <-a or -g> <path-to-repo>");
         process::exit(1);
     }
-    let path = &args[1];
-    if let Err(e) = generate_diff(path) {
+    let path = &args[2];
+    let result = if args[1] == "-g" {
+        generate_diff(path)
+    } else if args[2] == "-a" {
+        apply_diff(path)
+    } else {
+        Err(error::Error::Internal(String::from("Invalid argument")))
+    };
+    if let Err(e) = result {
         println!("{}", e);
         process::exit(1);
     }
