@@ -1,4 +1,6 @@
-use git2::{DiffDelta, DiffFormat, DiffHunk, DiffLine, DiffOptions, Repository};
+use git2::{
+    ApplyLocation, Diff, DiffDelta, DiffFormat, DiffHunk, DiffLine, DiffOptions, Repository,
+};
 use std::{env, fs::File, io::prelude::*, process};
 
 mod error;
@@ -30,6 +32,18 @@ fn generate_diff(path: &str) -> Result<(), error::Error> {
 
     diff.print(DiffFormat::Patch, read_diff_line)?;
 
+    Ok(())
+}
+
+fn apply_diff(path: &str) -> Result<(), error::Error> {
+    let mut file = File::open("diff.txt")?;
+    let metadata = file.metadata()?;
+    println!("{}", metadata.len());
+    let mut buf = vec![0; metadata.len() as usize];
+    file.read(&mut buf)?;
+    let repo = Repository::init(path)?; //call this before from_buffer, so git_libgit2_init gets called
+    let diff = Diff::from_buffer(&buf)?;
+    repo.apply(&diff, ApplyLocation::WorkDir, None)?;
     Ok(())
 }
 
