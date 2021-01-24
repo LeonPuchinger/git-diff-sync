@@ -7,6 +7,12 @@ pub enum Error {
     Internal(String),
 }
 
+macro_rules! internal {
+    ($msg: literal) => {
+        $crate::error::Error::Internal(String::from($msg))
+    };
+}
+
 impl From<git2::Error> for Error {
     fn from(err: git2::Error) -> Error {
         Error::Git(err)

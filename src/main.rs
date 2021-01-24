@@ -3,7 +3,9 @@ use git2::{
 };
 use std::{env, fs::File, io::prelude::*, process};
 
+#[macro_use]
 mod error;
+mod remote;
 
 fn generate_diff(path: &str) -> Result<(), error::Error> {
     let mut opt = DiffOptions::new();
@@ -47,21 +49,25 @@ fn apply_diff(path: &str) -> Result<(), error::Error> {
     Ok(())
 }
 
-fn main() {
+fn run() -> Result<(), error::Error> {
     let args: Vec<String> = env::args().collect();
     if args.len() != 3 {
-        println!("USAGE: git-diff-sync <-a or -g> <path-to-repo>");
-        process::exit(1);
+        Err(internal!("usage: git-diff-sync <-a or -g> <path-to-repo>"))?;
     }
     let path = &args[2];
-    let result = if args[1] == "-g" {
-        generate_diff(path)
-    } else if args[2] == "-a" {
-        apply_diff(path)
+    if args[1] == "-g" {
+        generate_diff(path)?;
+        remote::init_remote_repo()?;
+    } else if args[1] == "-a" {
+        apply_diff(path)?;
     } else {
-        Err(error::Error::Internal(String::from("Invalid argument")))
-    };
-    if let Err(e) = result {
+        Err(internal!("invalid argument"))?;
+    }
+    Ok(())
+}
+
+fn main() {
+    if let Err(e) = run() {
         println!("{}", e);
         process::exit(1);
     }
