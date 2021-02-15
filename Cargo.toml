@@ -10,3 +10,4 @@ description = "syncs uncommitted changes between clones of the same repository"
 [dependencies]
 git2 = "0.13.15"
 dirs = "3.0.1"
+chrono = "0.4.19"
