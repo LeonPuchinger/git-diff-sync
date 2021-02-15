@@ -1,38 +1,21 @@
 use crate::error;
-use git2::{
-    ApplyLocation, Diff, DiffDelta, DiffFormat, DiffHunk, DiffLine, DiffOptions, Repository,
-};
-use std::{fs::File, io::prelude::*};
+use git2::{ApplyLocation, Diff, DiffOptions, Repository};
+use std::{fs::File, io::prelude::*, path::Path};
 
-pub fn init_local_repo(path: &str) -> Result<Repository, error::Error> {
+pub fn init_local(path: &Path) -> Result<Repository, error::Error> {
     let repo = Repository::open(path)?;
     Ok(repo)
 }
 
-pub fn generate_diff(repo: &Repository) -> Result<(), error::Error> {
+pub fn generate_diff(repo: &Repository) -> Result<(Diff, String), error::Error> {
     let mut opt = DiffOptions::new();
     opt.show_untracked_content(true);
     opt.recurse_untracked_dirs(true);
     let head = repo.head()?;
     let tree = head.peel_to_tree()?;
     let diff = repo.diff_tree_to_workdir(Some(&tree), Some(&mut opt))?;
-    let mut file = File::create("diff.txt")?;
-
-    let read_diff_line = |_delta: DiffDelta, _hunk: Option<DiffHunk>, line: DiffLine| -> bool {
-        let origin = line.origin();
-        if origin == '+' || origin == '-' || origin == ' ' {
-            if let Err(_) = file.write(&[origin as u8]) {
-                return false;
-            };
-        }
-        if let Err(_) = file.write(line.content()) {
-            return false;
-        };
-        true
-    };
-
-    diff.print(DiffFormat::Patch, read_diff_line)?;
-    Ok(())
+    let branch = head.shorthand().unwrap();
+    Ok((diff, branch.to_owned()))
 }
 
 pub fn apply_diff(repo: &Repository) -> Result<(), error::Error> {

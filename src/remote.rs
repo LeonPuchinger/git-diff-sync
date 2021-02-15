@@ -1,17 +1,36 @@
 use crate::error;
-use dirs::home_dir;
-use git2::Repository;
-use std::{fs, path::PathBuf};
+use crate::config;
+use git2::{Repository, Diff, DiffDelta, DiffFormat, DiffHunk, DiffLine};
+use std::{fs::File, fs::create_dir_all, io::prelude::*};
 
-fn config_dir() -> Result<PathBuf, error::Error> {
-    let home = match home_dir() {
-        Some(path) => path,
-        None => Err(internal!("could not find home directory"))?,
+pub fn init_remote() -> Result<Repository, error::Error> {
+    let repo = Repository::open(config::remote_path()?)?;
+    Ok(repo)
+}
+
+pub fn save_diff(_repo: &Repository, diff: &Diff, local_name: &str, branch: &str) -> Result<(), error::Error> {
+    let mut diff_file = config::remote_path()?.join(local_name);
+    create_dir_all(diff_file.as_path())?;
+    diff_file = diff_file.join(branch);
+    diff_file.set_extension("diff");
+    let mut file = File::create(diff_file)?;
+
+    let read_diff_line = |_delta: DiffDelta, _hunk: Option<DiffHunk>, line: DiffLine| -> bool {
+        let origin = line.origin();
+        if origin == '+' || origin == '-' || origin == ' ' {
+            if let Err(_) = file.write(&[origin as u8]) {
+                return false;
+            };
+        }
+        if let Err(_) = file.write(line.content()) {
+            return false;
+        };
+        true
     };
-    let config = home.join(".git-diff-sync");
-    if !config.exists() {
-        fs::create_dir(&config)?;
-    }
+
+    diff.print(DiffFormat::Patch, read_diff_line)?;
+    Ok(())
+}
     Ok(config)
 }
 
