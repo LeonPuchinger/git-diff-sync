@@ -1,12 +1,13 @@
 use crate::error;
 use crate::config;
+use crate::repository;
 use git2::{Repository, Diff, DiffDelta, DiffFormat, DiffHunk, DiffLine};
 use std::{io::prelude::*, path::Path};
 use std::fs::{File, create_dir_all};
 use chrono::{Local};
 
-pub fn init_remote() -> Result<Repository, error::Error> {
-    let repo = Repository::open(config::remote_path()?)?;
+pub fn open_remote() -> Result<Repository, error::Error> {
+    let repo = repository::open_repo(&config::remote_path()?)?;
     Ok(repo)
 }
 
@@ -59,19 +60,17 @@ pub fn save_diff(repo: &Repository, diff: &Diff, local_name: &str, branch: &str)
     Ok(())
 }
 
-fn active_branch(repo: &Repository) -> Result<String, error::Error> {
-    let head = repo.head()?;
-    let name = head.shorthand().unwrap();
-    Ok(name.to_owned())
-}
-
-pub fn refresh_remote(repo: &Repository) -> Result<(), error::Error> {
-    let remotes = repo.remotes()?;
-    if remotes.is_empty() {
-        Err(internal!("repo has no remotes. cannot pull/fetch"))?;
+pub fn get_diff<'a>(repo: &'a Repository, local_name: &str, branch: &str) -> Result<Diff<'a>, error::Error> {
+    let mut diff_path = repo.path().parent().unwrap().join(local_name);
+    diff_path = diff_path.join(branch);
+    diff_path.set_extension("diff");
+    if !diff_path.exists() {
+        Err(internal!("No diff file available for this repo to sync from yet"))?;
     }
-    let mut remote = repo.find_remote(remotes.get(0).unwrap())?;
-    let branch = active_branch(repo)?;
-    remote.fetch(&[branch], None, None)?;
-    Ok(())
+    let mut file = File::open(diff_path)?;
+    let metadata = file.metadata()?;
+    let mut buf = vec![0; metadata.len() as usize];
+    file.read(&mut buf)?;
+    let diff = Diff::from_buffer(&buf)?;
+    Ok(diff)
 }
