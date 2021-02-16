@@ -36,7 +36,7 @@ fn run() -> Result<(), error::Error> {
 
 fn main() {
     if let Err(e) = run() {
-        println!("{}", e);
+        println!("ERROR: {}", e);
         process::exit(1);
     }
 }

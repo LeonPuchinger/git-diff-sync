@@ -34,7 +34,6 @@ impl From<path::StripPrefixError> for Error {
 
 impl fmt::Display for Error {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "ERROR: ")?;
         match self {
             Error::Git(err) => write!(f, "{}", err),
             Error::Io(err) => write!(f, "{}", err),
