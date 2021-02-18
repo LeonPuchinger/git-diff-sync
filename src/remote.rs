@@ -36,7 +36,7 @@ fn commit_diff(repo: &Repository, path: &Path, local_name: &str) -> Result<(), e
 }
 
 pub fn save_diff(repo: &Repository, diff: &Diff, local_name: &str, branch: &str) -> Result<(), error::Error> {
-    if let Err(e) = repository::fetch_repo(repo) {
+    if let Err(e) = repository::pull(repo) {
         println!("WARNING: (remote) {}. using local version instead", e);
     }
     let mut diff_path = config::remote_path()?.join(local_name);
@@ -64,7 +64,7 @@ pub fn save_diff(repo: &Repository, diff: &Diff, local_name: &str, branch: &str)
 }
 
 pub fn get_diff<'a>(repo: &'a Repository, local_name: &str, branch: &str) -> Result<Diff<'a>, error::Error> {
-    if let Err(e) = repository::fetch_repo(repo) {
+    if let Err(e) = repository::pull(repo) {
         println!("WARNING: (remote) {}. using local version instead", e);
     }
     let mut diff_path = repo.path().parent().unwrap().join(local_name);
