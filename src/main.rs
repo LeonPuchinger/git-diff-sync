@@ -12,7 +12,7 @@ fn run() -> Result<(), error::Error> {
     if args.len() != 3 {
         Err(internal!("usage: git-diff-sync <-a or -g> <path-to-repo>"))?;
     }
-    let path = PathBuf::from(&args[2]);
+    let path = PathBuf::from(&args[2]).canonicalize()?;
     if path.is_file() {
         Err(internal!("path is not a directory"))?;
     }
